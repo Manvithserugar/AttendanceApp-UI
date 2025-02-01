@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import View from "./pages/View";
 import Manage from "./pages/Manage";
@@ -51,17 +51,12 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <BrowserRouter basename="/AttendanceApp-UI">
-          {/* <Routes> */}
-            <Route path="/" element={<Home baseURL={config.baseURL} />} />
-            <Route path="/view" element={<View baseURL={config.baseURL} />} />
-            <Route
-              path="/manage"
-              element={<Manage baseURL={config.baseURL} />}
-            />
-            <Route path="/settings" element={<Settings />} />
-          {/* </Routes> */}
-        </BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home baseURL={config.baseURL} />} />
+          <Route path="/view" element={<View baseURL={config.baseURL} />} />
+          <Route path="/manage" element={<Manage baseURL={config.baseURL} />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
       </Container>
     </div>
   );
