@@ -51,28 +51,17 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Routes>
-          <Route
-            basename="/AttendanceApp-UI/"
-            path="/"
-            element={<Home baseURL={config.baseURL} />}
-          />
-          <Route
-            basename="/AttendanceApp-UI/"
-            path="/view"
-            element={<View baseURL={config.baseURL} />}
-          />
-          <Route
-            basename="/AttendanceApp-UI/"
-            path="/manage"
-            element={<Manage baseURL={config.baseURL} />}
-          />
-          <Route
-            basename="/AttendanceApp-UI/"
-            path="/settings"
-            element={<Settings />}
-          />
-        </Routes>
+        <BrowserRouter basename="/AttendanceApp-UI">
+          {/* <Routes> */}
+            <Route path="/" element={<Home baseURL={config.baseURL} />} />
+            <Route path="/view" element={<View baseURL={config.baseURL} />} />
+            <Route
+              path="/manage"
+              element={<Manage baseURL={config.baseURL} />}
+            />
+            <Route path="/settings" element={<Settings />} />
+          {/* </Routes> */}
+        </BrowserRouter>
       </Container>
     </div>
   );
