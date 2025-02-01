@@ -51,7 +51,7 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Routes>
+        <Routes basename="/AttendanceApp-UI">
           <Route path="/" element={<Home baseURL={config.baseURL} />} />
           <Route path="/view" element={<View baseURL={config.baseURL} />} />
           <Route path="/manage" element={<Manage baseURL={config.baseURL} />} />
