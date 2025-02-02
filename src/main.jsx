@@ -10,7 +10,7 @@ const theme = createTheme();
 function Root() {
   return (
     <ThemeProvider theme={theme}>
-      <HashRouter basename="/AttendanceApp-UI">
+      <HashRouter>
         <App />
       </HashRouter>
     </ThemeProvider>
