@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -10,9 +10,9 @@ const theme = createTheme();
 function Root() {
   return (
     <ThemeProvider theme={theme}>
-      <BrowserRouter basename="/AttendanceApp-UI">
+      <HashRouter basename="/AttendanceApp-UI">
         <App />
-      </BrowserRouter>
+      </HashRouter>
     </ThemeProvider>
   );
 }
