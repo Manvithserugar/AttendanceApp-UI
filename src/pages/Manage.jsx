@@ -166,7 +166,7 @@ function Manage({ baseURL }) {
   const fetchStudents = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/students/attendance/date`, {
+      const response = await fetch(`${baseURL}/students/attendance/date`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -190,7 +190,7 @@ function Manage({ baseURL }) {
   const handleDelete = async (studentId) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/students/${studentId}`, {
+      const response = await fetch(`${baseURL}/students/${studentId}`, {
         method: "DELETE",
       });
       if (!response.ok) {
@@ -212,7 +212,7 @@ function Manage({ baseURL }) {
   const handleUpdate = async (studentId) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/students/${studentId}`, {
+      const response = await fetch(`${baseURL}/students/${studentId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -241,7 +241,7 @@ function Manage({ baseURL }) {
   const handleAdd = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/students`, {
+      const response = await fetch(`${baseURL}/students`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -269,7 +269,7 @@ function Manage({ baseURL }) {
   //   setIsLoading(true);
   //   try {
   //     const response = await fetch(
-  //       `http://localhost:3001/students/attendance/date`,
+  //       `${baseURL}/students/attendance/date`,
   //       {
   //         method: "POST",
   //         headers: {
@@ -296,7 +296,7 @@ function Manage({ baseURL }) {
   //   setIsLoading(true);
   //   try {
   //     const response = await fetch(
-  //       `http://localhost:3001/students/${studentId}`,
+  //       `${baseURL}/students/${studentId}`,
   //       {
   //         method: "DELETE",
   //       }
@@ -321,7 +321,7 @@ function Manage({ baseURL }) {
   //   setIsLoading(true);
   //   try {
   //     const response = await fetch(
-  //       `http://localhost:3001/students/${studentId}`,
+  //       `${baseURL}/students/${studentId}`,
   //       {
   //         method: "PUT",
   //         headers: {
@@ -352,7 +352,7 @@ function Manage({ baseURL }) {
   // const handleAdd = async () => {
   //   setIsLoading(true);
   //   try {
-  //     const response = await fetch(`http://localhost:3001/students`, {
+  //     const response = await fetch(`${baseURL}/students`, {
   //       method: "POST",
   //       headers: {
   //         "Content-Type": "application/json",

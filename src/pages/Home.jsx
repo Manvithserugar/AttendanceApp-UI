@@ -96,6 +96,28 @@ function Home({ baseURL }) {
     const today = new Date();
     const formattedDate = format(today, "yyyy-MM-dd");
 
+    const response = await fetch(`${baseURL}/students/attendance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: formattedDate, Ids: selectedStudentIds }),
+    });
+    if (response.status === 201) {
+      setOpen(true);
+      setNotification("Attendance for selected students marked successfully!");
+    }
+    setSelectedStudentIds([]);
+    fetchStudents();
+  };
+
+  // const handleMarkAttendance = async () => {
+  //   if (selectedStudentIds.length === 0) {
+  //     alert("Please select at least one student.");
+  //     return;
+  //   }
+
+  //   const today = new Date();
+  //   const formattedDate = format(today, "yyyy-MM-dd");
+
   //   const response = await fetch("http://localhost:3001/students/attendance", {
   //     method: "POST",
   //     headers: { "Content-Type": "application/json" },
@@ -108,17 +130,6 @@ function Home({ baseURL }) {
   //   setSelectedStudentIds([]);
   //   fetchStudents();
   // };
-
-    const response = await fetch(`${baseURL}/students/attendance`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: formattedDate, Ids: selectedStudentIds }),
-    });
-    if (response.status === 201)
-      alert("Attendance for selected students marked successfully!");
-    setSelectedStudentIds([]);
-    fetchStudents();
-  };
 
   return (
     <div style={{ padding: "16px" }}>
