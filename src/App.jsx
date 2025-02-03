@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import View from "./pages/View";
 import Manage from "./pages/Manage";
 import Settings from "./pages/Settings";
+import { NotificationContext } from "./NotificationContext";
+import Notification from "./components/Notification";
+
 import {
   AppBar,
   Toolbar,
@@ -25,6 +28,9 @@ const StyledLink = styled(Link)({
 });
 
 function App() {
+  const [notification, setNotification] = useState("");
+  const [open, setOpen] = useState(false);
+
   return (
     <div style={{ background: "white" }}>
       <AppBar position="static">
@@ -50,13 +56,21 @@ function App() {
           </Box>
         </Toolbar>
       </AppBar>
+
+      <Notification notification={notification} open={open} setOpen={setOpen} />
+
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Routes >
-          <Route path="/" element={<Home baseURL={config.baseURL} />} />
-          <Route path="/view" element={<View baseURL={config.baseURL} />} />
-          <Route path="/manage" element={<Manage baseURL={config.baseURL} />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
+        <NotificationContext.Provider value={{ setNotification, setOpen }}>
+          <Routes>
+            <Route path="/" element={<Home baseURL={config.baseURL} />} />
+            <Route path="/view" element={<View baseURL={config.baseURL} />} />
+            <Route
+              path="/manage"
+              element={<Manage baseURL={config.baseURL} />}
+            />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </NotificationContext.Provider>
       </Container>
     </div>
   );

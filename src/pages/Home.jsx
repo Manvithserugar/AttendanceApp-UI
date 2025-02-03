@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { format } from "date-fns";
 import {
   TextField,
@@ -15,8 +15,10 @@ import {
   Paper,
   Container,
 } from "@mui/material";
+import { NotificationContext } from "../NotificationContext";
 
 function Home({ baseURL }) {
+  const { setNotification, setOpen } = useContext(NotificationContext);
   const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,16 +96,18 @@ function Home({ baseURL }) {
     const today = new Date();
     const formattedDate = format(today, "yyyy-MM-dd");
 
-    //   const response = await fetch("http://localhost:3001/students/attendance", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ date: formattedDate, Ids: selectedStudentIds }),
-    //   });
-    //   if (response.status === 201)
-    //     alert("Attendance for selected students marked successfully!");
-    //   setSelectedStudentIds([]);
-    //   fetchStudents();
-    // };
+  //   const response = await fetch("http://localhost:3001/students/attendance", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ date: formattedDate, Ids: selectedStudentIds }),
+  //   });
+  //   if (response.status === 201) {
+  //     setOpen(true);
+  //     setNotification("Attendance for selected students marked successfully!");
+  //   }
+  //   setSelectedStudentIds([]);
+  //   fetchStudents();
+  // };
 
     const response = await fetch(`${baseURL}/students/attendance`, {
       method: "POST",
@@ -155,6 +159,7 @@ function Home({ baseURL }) {
               <TableCell>Consecutive classes</TableCell>
               <TableCell>Streak Of 4</TableCell>
               <TableCell>Last 4 Classes</TableCell>
+              <TableCell>Last Paid</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -174,12 +179,15 @@ function Home({ baseURL }) {
                 <TableCell>{student.streakOfFour}</TableCell>
                 <TableCell>
                   <div style={{ display: "flex", gap: "8px" }}>
-                    {student.dates.map((date, index) => (
-                      <p key={index}>
-                        {format(new Date(date), "dd/MM/yyyy")},{" "}
-                      </p>
-                    ))}
+                    {student.dates
+                      .map((date) => format(new Date(date), "dd/MM/yyyy"))
+                      .join(", ")}
                   </div>
+                </TableCell>
+                <TableCell>
+                  {student.lastPaidDate
+                    ? format(new Date(student.lastPaidDate), "dd/MM/yyyy")
+                    : ""}
                 </TableCell>
               </TableRow>
             ))}

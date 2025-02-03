@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   TextField,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -64,7 +63,12 @@ function View({ baseURL }) {
         onChange={handleDateChange}
         variant="outlined"
         sx={{ mb: 2, width: "100%" }}
-        inputProps={{ max: maxDate }}
+        slotProps={{
+          input: {
+            onClick: (e) => e.target.showPicker(),
+            max: maxDate,
+          },
+        }}
       />
 
       {students.length > 0 ? (

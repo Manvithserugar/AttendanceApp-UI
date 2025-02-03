@@ -1,4 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+  useCallback,
+  useMemo,
+} from "react";
+import { format } from "date-fns";
 import {
   TextField,
   Button,
@@ -10,12 +18,31 @@ import {
   CardActions,
   Typography,
   Pagination,
+  CircularProgress,
+  Modal,
+  Backdrop,
+  Fade,
 } from "@mui/material";
 
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-function Manage({baseURL}) {
+import { NotificationContext } from "../NotificationContext";
+
+const modalStyle = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: 400,
+  bgcolor: "background.paper",
+  borderRadius: 2,
+  boxShadow: 24,
+  p: 4,
+};
+
+function Manage({ baseURL }) {
+  const { setNotification, setOpen } = useContext(NotificationContext);
   const [studentId, setStudentId] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,35 +52,41 @@ function Manage({baseURL}) {
   const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [lastPaidDate, setLastPaidDate] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteStudent, setDeleteStudent] = useState(null);
   const studentsPerPage = 5;
 
-  const formRef = useRef();
+  const formRef = useRef(null);
+  const maxDate = new Date();
 
+  // Fetch students on component mount.
   useEffect(() => {
     fetchStudents();
   }, []);
 
+  // Reset editing state when all form fields are cleared.
   useEffect(() => {
-    if (name === "" && email === "" && phone === "") {
+    if (!name && !email && !phone && !lastPaidDate) {
       setIsEditing(false);
       setEditStudentId("");
     }
-  }, [name, email, phone]);
+  }, [name, email, phone, lastPaidDate]);
 
+  // When editStudentId changes, load the corresponding student details.
   useEffect(() => {
     if (editStudentId) {
       fetchStudentDetails(editStudentId);
     }
   }, [editStudentId]);
 
-  const handleSearch = (event) => {
-    setSearchQuery(event.target.value);
-    setCurrentPage(1);
-  };
-
-  const filteredStudents = students.filter((student) =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Memoize the filtered list of students.
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) =>
+      student.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [students, searchQuery]);
 
   const indexOfLastStudent = currentPage * studentsPerPage;
   const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
@@ -61,39 +94,60 @@ function Manage({baseURL}) {
     indexOfFirstStudent,
     indexOfLastStudent
   );
-
   const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
 
-  const handlePageChange = (event, value) => {
+  // Handle the student search.
+  const handleSearch = useCallback((event) => {
+    setSearchQuery(event.target.value);
+    setCurrentPage(1);
+  }, []);
+
+  // Handle pagination.
+  const handlePageChange = useCallback((event, value) => {
     setCurrentPage(value);
-  };
+  }, []);
 
+  // Fetch student details for editing.
   const fetchStudentDetails = (id) => {
-    let student = students.find((student) => student.id === id);
-    setStudentId(student.id);
-    setName(student.name);
-    setEmail(student.email);
-    setPhone(student.phone);
+    const student = students.find((student) => student.id === id);
+    if (student) {
+      setStudentId(student.id);
+      setName(student.name);
+      setEmail(student.email);
+      setPhone(student.phone);
+      setLastPaidDate(
+        student.lastPaidDate
+          ? format(new Date(student.lastPaidDate), "yyyy-MM-dd")
+          : ""
+      );
+    }
   };
 
-  const clearFields = () => {
+  // Clear form fields.
+  const clearFields = useCallback(() => {
     setStudentId("");
     setEditStudentId("");
     setName("");
     setEmail("");
     setPhone("");
+    setLastPaidDate("");
     setIsEditing(false);
-  };
+  }, []);
 
-  const handleEdit = (id) => {
-    setIsEditing(true);
-    setEditStudentId(id);
-    fetchStudentDetails(id);
-    formRef.current.scrollIntoView({
-      behavior: "smooth",
-    });
-  };
+  // Handle edit action.
+  const handleEdit = useCallback(
+    (id) => {
+      setIsEditing(true);
+      setEditStudentId(id);
+      fetchStudentDetails(id);
+      if (formRef.current) {
+        formRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    },
+    [students]
+  );
 
+  // Handle form submit for add/update.
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (isEditing) {
@@ -103,100 +157,247 @@ function Manage({baseURL}) {
     }
   };
 
+  // Handle date change.
+  const handleDateChange = (event) => {
+    setLastPaidDate(event.target.value);
+  };
+
+  // Fetch students from the server.
+  const fetchStudents = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3001/students/attendance/date`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch students");
+      }
+      const data = await response.json();
+      setStudents(data);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      setNotification("Error fetching students");
+      setOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle delete action.
+  const handleDelete = async (studentId) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3001/students/${studentId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete student");
+      }
+      setNotification("Student deleted successfully");
+      setOpen(true);
+      fetchStudents();
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      setNotification("Error deleting student");
+      setOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle update action.
+  const handleUpdate = async (studentId) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3001/students/${studentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, phone, lastPaidDate }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update student");
+      }
+      setNotification("Student updated successfully");
+      setOpen(true);
+      clearFields();
+      fetchStudents();
+      setIsEditing(false);
+      setEditStudentId("");
+    } catch (error) {
+      console.error("Error updating student:", error);
+      setNotification("Error updating student");
+      setOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle add action.
+  const handleAdd = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3001/students`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, phone }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to add student");
+      }
+      setNotification("Student added successfully");
+      setOpen(true);
+      clearFields();
+      fetchStudents();
+    } catch (error) {
+      console.error("Error adding student:", error);
+      setNotification("Error adding student");
+      setOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // // Fetch students from the server.
   // const fetchStudents = async () => {
-  //   const studentsData = await fetch(
-  //     "http://localhost:3001/students/attendance/date",
-  //     {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:3001/students/attendance/date`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch students");
+  //     }
+  //     const data = await response.json();
+  //     setStudents(data);
+  //   } catch (error) {
+  //     console.error("Error fetching students:", error);
+  //     setNotification("Error fetching students");
+  //     setOpen(true);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // // Handle delete action.
+  // const handleDelete = async (studentId) => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:3001/students/${studentId}`,
+  //       {
+  //         method: "DELETE",
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete student");
+  //     }
+  //     setNotification("Student deleted successfully");
+  //     setOpen(true);
+  //     fetchStudents();
+  //   } catch (error) {
+  //     console.error("Error deleting student:", error);
+  //     setNotification("Error deleting student");
+  //     setOpen(true);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // // Handle update action.
+  // const handleUpdate = async (studentId) => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await fetch(
+  //       `http://localhost:3001/students/${studentId}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({ name, email, phone, lastPaidDate }),
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update student");
+  //     }
+  //     setNotification("Student updated successfully");
+  //     setOpen(true);
+  //     clearFields();
+  //     fetchStudents();
+  //     setIsEditing(false);
+  //     setEditStudentId("");
+  //   } catch (error) {
+  //     console.error("Error updating student:", error);
+  //     setNotification("Error updating student");
+  //     setOpen(true);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // // Handle add action.
+  // const handleAdd = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await fetch(`http://localhost:3001/students`, {
   //       method: "POST",
   //       headers: {
   //         "Content-Type": "application/json",
   //       },
+  //       body: JSON.stringify({ name, email, phone }),
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error("Failed to add student");
   //     }
-  //   );
-  //   const students = await studentsData.json();
-  //   setStudents(students);
+  //     setNotification("Student added successfully");
+  //     setOpen(true);
+  //     clearFields();
+  //     fetchStudents();
+  //   } catch (error) {
+  //     console.error("Error adding student:", error);
+  //     setNotification("Error adding student");
+  //     setOpen(true);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
   // };
 
-  // const handleDelete = async (studentId) => {
-  //   await fetch(`http://localhost:3001/students/${studentId}`, {
-  //     method: "DELETE",
-  //   });
-  //   fetchStudents();
-  // };
+  // Open the delete confirmation modal.
+  const handleOpenModal = useCallback((student) => {
+    setDeleteStudent(student);
+    setModalOpen(true);
+  }, []);
 
-  // const handleUpdate = async (studentId) => {
-  //   await fetch(`http://localhost:3001/students/${studentId}`, {
-  //     method: "PUT",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({ name, email, phone }),
-  //   });
-  //   clearFields();
-  //   fetchStudents();
-  //   setIsEditing(false);
-  //   setEditStudentId("");
-  // };
-
-  // const handleAdd = async () => {
-  //   await fetch("http://localhost:3001/students", {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({ name, email, phone }),
-  //   });
-  //   clearFields();
-  //   fetchStudents();
-  // };
-
-  const fetchStudents = async () => {
-    const studentsData = await fetch(`${baseURL}/students/attendance/date`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const students = await studentsData.json();
-    setStudents(students);
-  };
-
-  const handleDelete = async (studentId) => {
-    await fetch(`${baseURL}/students/${studentId}`, {
-      method: "DELETE",
-    });
-    fetchStudents();
-  };
-
-  const handleUpdate = async (studentId) => {
-    await fetch(`${baseURL}/students/${studentId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, phone }),
-    });
-    clearFields();
-    fetchStudents();
-    setIsEditing(false);
-    setEditStudentId("");
-  };
-
-  const handleAdd = async () => {
-    await fetch(`${baseURL}/students`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, phone }),
-    });
-    clearFields();
-    fetchStudents();
-  };
+  // Close the delete confirmation modal.
+  const handleCloseModal = useCallback(() => {
+    setDeleteStudent(null);
+    setModalOpen(false);
+  }, []);
 
   return (
     <div style={{ padding: "16px" }}>
       <h1>Manage Students</h1>
+
+      {/* Show a loading spinner if a network operation is in progress */}
+      {isLoading && (
+        <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
       <Box
         ref={formRef}
         component="form"
@@ -214,6 +415,7 @@ function Manage({baseURL}) {
         <TextField
           label="Email"
           variant="outlined"
+          type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -225,7 +427,21 @@ function Manage({baseURL}) {
           onChange={(e) => setPhone(e.target.value)}
           required
         />
-
+        {isEditing && (
+          <>
+            <Typography sx={{ margin: 0 }}>Update Paid Date</Typography>
+            <TextField
+              type="date"
+              value={lastPaidDate}
+              onChange={handleDateChange}
+              variant="outlined"
+              sx={{ mb: 2, width: "100%" }}
+              inputProps={{
+                max: format(maxDate, "yyyy-MM-dd"),
+              }}
+            />
+          </>
+        )}
         <Box
           sx={{ display: "flex", justifyContent: "flex-end", width: "100%" }}
         >
@@ -258,15 +474,17 @@ function Manage({baseURL}) {
             </Button>
           </div>
         </Box>
-
-        <TextField
-          label="Search students..."
-          variant="outlined"
-          value={searchQuery}
-          onChange={handleSearch}
-          sx={{ mb: 2, width: "100%" }}
-        />
       </Box>
+
+      {/* Search field placed outside the form */}
+      <TextField
+        label="Search students..."
+        variant="outlined"
+        value={searchQuery}
+        onChange={handleSearch}
+        sx={{ mb: 2, width: "100%" }}
+      />
+
       <List>
         {currentStudents.map((student) => (
           <ListItem
@@ -278,7 +496,7 @@ function Manage({baseURL}) {
                 marginBottom: 2,
                 display: "flex",
                 justifyContent: "space-between",
-                alignContent: "center",
+                alignItems: "center",
                 boxShadow: 2,
                 width: "80%",
               }}
@@ -306,7 +524,7 @@ function Manage({baseURL}) {
                   variant="outlined"
                   startIcon={<DeleteIcon />}
                   size="medium"
-                  onClick={() => handleDelete(student.id)}
+                  onClick={() => handleOpenModal(student)}
                   color="error"
                 >
                   Delete
@@ -316,6 +534,7 @@ function Manage({baseURL}) {
           </ListItem>
         ))}
       </List>
+
       <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
         <Pagination
           count={totalPages}
@@ -324,6 +543,58 @@ function Manage({baseURL}) {
           color="primary"
         />
       </Box>
+
+      <Modal
+        aria-labelledby="transition-modal-title"
+        aria-describedby="transition-modal-description"
+        open={modalOpen}
+        onClose={handleCloseModal}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{
+          backdrop: {
+            timeout: 500,
+          },
+        }}
+      >
+        <Fade in={modalOpen}>
+          <Box sx={modalStyle}>
+            {deleteStudent && (
+              <>
+                <Typography
+                  id="transition-modal-description"
+                  color="error"
+                  sx={{ mt: 0.5 }}
+                >
+                  Are you sure you want to delete the student{" "}
+                  {deleteStudent.name}?
+                </Typography>
+                <Box sx={{ mt: 4, display: "flex", gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    size="medium"
+                    onClick={handleCloseModal}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<DeleteIcon />}
+                    size="medium"
+                    onClick={() => {
+                      handleDelete(deleteStudent.id);
+                      handleCloseModal();
+                    }}
+                    color="error"
+                  >
+                    Delete
+                  </Button>
+                </Box>
+              </>
+            )}
+          </Box>
+        </Fade>
+      </Modal>
     </div>
   );
 }
