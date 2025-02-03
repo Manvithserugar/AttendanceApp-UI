@@ -41,13 +41,16 @@ function View({ baseURL }) {
 
   useEffect(() => {
     const fetchStudents = async () => {
-      let students = await fetch(`${baseURL}/students/attendance/date`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ date: format(selectedDate, "yyyy-MM-dd") }),
-      });
+      let students = await fetch(
+        `${baseURL}/students/attendance/date`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ date: format(selectedDate, "yyyy-MM-dd") }),
+        }
+      );
       students = await students.json();
       setStudents(students);
     };
