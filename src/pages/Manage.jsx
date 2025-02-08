@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import axios from "axios";
 import { format } from "date-fns";
 import {
   TextField,
@@ -166,17 +167,10 @@ function Manage({ baseURL }) {
   const fetchStudents = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${baseURL}/students/attendance/date`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch students");
-      }
-      const data = await response.json();
-      setStudents(data);
+      const response = await axios.post(
+        `http://localhost:3001/students/attendance/date`
+      );
+      setStudents(response.data);
     } catch (error) {
       console.error("Error fetching students:", error);
       setNotification("Error fetching students");
@@ -190,12 +184,7 @@ function Manage({ baseURL }) {
   const handleDelete = async (studentId) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${baseURL}/students/${studentId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete student");
-      }
+      await axios.delete(`http://localhost:3001/students/${studentId}`);
       setNotification("Student deleted successfully");
       setOpen(true);
       fetchStudents();
@@ -212,16 +201,12 @@ function Manage({ baseURL }) {
   const handleUpdate = async (studentId) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${baseURL}/students/${studentId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, phone, lastPaidDate }),
+      await axios.put(`http://localhost:3001/students/${studentId}`, {
+        name,
+        email,
+        phone,
+        lastPaidDate,
       });
-      if (!response.ok) {
-        throw new Error("Failed to update student");
-      }
       setNotification("Student updated successfully");
       setOpen(true);
       clearFields();
@@ -241,16 +226,11 @@ function Manage({ baseURL }) {
   const handleAdd = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${baseURL}/students`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, phone }),
+      await axios.post(`http://localhost:3001/students`, {
+        name,
+        email,
+        phone,
       });
-      if (!response.ok) {
-        throw new Error("Failed to add student");
-      }
       setNotification("Student added successfully");
       setOpen(true);
       clearFields();

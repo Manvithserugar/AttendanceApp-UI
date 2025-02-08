@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { format } from "date-fns";
+import axios from "../axios";
+
 import {
   TextField,
   Button,
@@ -14,8 +16,10 @@ import {
   TableRow,
   Paper,
   Container,
+  InputAdornment,
 } from "@mui/material";
 import { NotificationContext } from "../NotificationContext";
+import SearchIcon from "@mui/icons-material/Search";
 
 function Home({ baseURL }) {
   const { setNotification, setOpen } = useContext(NotificationContext);
@@ -26,30 +30,27 @@ function Home({ baseURL }) {
 
   const studentsPerPage = 5;
 
+  const fetchStudents = async () => {
+    try {
+      const students = await axios.post(
+        "http://localhost:3001/students/attendance/date"
+      );
+      setStudents(students.data);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    }
+  };
+
   // const fetchStudents = async () => {
-  //   const studentsData = await fetch(
-  //     "http://localhost:3001/students/attendance/date",
-  //     {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //     }
-  //   );
+  //   const studentsData = await fetch(`${baseURL}/students/attendance/date`, {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //   });
   //   const students = await studentsData.json();
   //   setStudents(students);
   // };
-
-  const fetchStudents = async () => {
-    const studentsData = await fetch(`${baseURL}/students/attendance/date`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const students = await studentsData.json();
-    setStudents(students);
-  };
 
   useEffect(() => {
     fetchStudents();
@@ -87,28 +88,6 @@ function Home({ baseURL }) {
     }
   };
 
-  const handleMarkAttendance = async () => {
-    if (selectedStudentIds.length === 0) {
-      alert("Please select at least one student.");
-      return;
-    }
-
-    const today = new Date();
-    const formattedDate = format(today, "yyyy-MM-dd");
-
-    const response = await fetch(`${baseURL}/students/attendance`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: formattedDate, Ids: selectedStudentIds }),
-    });
-    if (response.status === 201) {
-      setOpen(true);
-      setNotification("Attendance for selected students marked successfully!");
-    }
-    setSelectedStudentIds([]);
-    fetchStudents();
-  };
-
   // const handleMarkAttendance = async () => {
   //   if (selectedStudentIds.length === 0) {
   //     alert("Please select at least one student.");
@@ -118,7 +97,7 @@ function Home({ baseURL }) {
   //   const today = new Date();
   //   const formattedDate = format(today, "yyyy-MM-dd");
 
-  //   const response = await fetch("http://localhost:3001/students/attendance", {
+  //   const response = await fetch(`${baseURL}/students/attendance`, {
   //     method: "POST",
   //     headers: { "Content-Type": "application/json" },
   //     body: JSON.stringify({ date: formattedDate, Ids: selectedStudentIds }),
@@ -130,6 +109,27 @@ function Home({ baseURL }) {
   //   setSelectedStudentIds([]);
   //   fetchStudents();
   // };
+
+  const handleMarkAttendance = async () => {
+    if (selectedStudentIds.length === 0) {
+      alert("Please select at least one student.");
+      return;
+    }
+
+    const today = new Date();
+    const formattedDate = format(today, "yyyy-MM-dd");
+
+    const response = await axios.post(
+      "http://localhost:3001/students/attendance",
+      { date: formattedDate, Ids: selectedStudentIds }
+    );
+    if (response.status === 201) {
+      setOpen(true);
+      setNotification("Attendance for selected students marked successfully!");
+    }
+    setSelectedStudentIds([]);
+    fetchStudents();
+  };
 
   return (
     <div style={{ padding: "16px" }}>
@@ -153,11 +153,18 @@ function Home({ baseURL }) {
       </Container>
 
       <TextField
-        label="Search students..."
+        label= "Search students..."
         variant="outlined"
         value={searchQuery}
         onChange={handleSearch}
         sx={{ mb: 2, width: "100%" }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+        }}
       />
       <TableContainer component={Paper}>
         <Table>

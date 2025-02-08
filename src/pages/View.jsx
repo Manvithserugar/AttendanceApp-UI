@@ -10,6 +10,7 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
+import axios from "axios";
 
 const maxDate = format(new Date(), "yyyy-MM-dd");
 
@@ -21,35 +22,19 @@ function View({ baseURL }) {
     setSelectedDate(new Date(event.target.value));
   };
 
-  // useEffect(() => {
-  //   const fetchStudents = async () => {
-  //     let students = await fetch(
-  //       "http://localhost:3001/students/attendance/date",
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({ date: format(selectedDate, "yyyy-MM-dd") }),
-  //       }
-  //     );
-  //     students = await students.json();
-  //     setStudents(students);
-  //   };
-  //   fetchStudents();
-  // }, [selectedDate]);
-
   useEffect(() => {
     const fetchStudents = async () => {
-      let students = await fetch(`${baseURL}/students/attendance/date`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ date: format(selectedDate, "yyyy-MM-dd") }),
-      });
-      students = await students.json();
-      setStudents(students);
+      try {
+        const response = await axios.post(
+          `${baseURL}/students/attendance/date`,
+          {
+            date: format(selectedDate, "yyyy-MM-dd"),
+          }
+        );
+        setStudents(response.data);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
     };
     fetchStudents();
   }, [selectedDate]);

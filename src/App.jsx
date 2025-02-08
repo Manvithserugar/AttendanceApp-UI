@@ -6,6 +6,7 @@ import Manage from "./pages/Manage";
 import Settings from "./pages/Settings";
 import { NotificationContext } from "./NotificationContext";
 import Notification from "./components/Notification";
+import axios from "./axios";
 
 import {
   AppBar,
@@ -15,7 +16,7 @@ import {
   Box,
   Breadcrumbs,
 } from "@mui/material";
-import { fontSize, styled } from "@mui/system";
+import { styled } from "@mui/system";
 import config from "./config";
 
 const StyledLink = styled(Link)({
